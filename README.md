@@ -1,4 +1,4 @@
-# TokensToTranslation
+# TokensToTranslation — by Nitesh Patel
 
 An English → German neural machine translator built with a plain PyTorch
 sequence-to-sequence LSTM. No HuggingFace pipelines, no pretrained translation
