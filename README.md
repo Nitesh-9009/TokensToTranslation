@@ -12,6 +12,20 @@ take everything from those and actually build a translator end to end.
 
 ---
 
+## SoC Weekly Progress
+
+The repo also holds my week-by-week assignment notebooks that build up to the
+final project:
+
+| Week | Notebook | Topics |
+|------|----------|--------|
+| 1 | [firstWeek_SOC.ipynb](firstWeek_SOC.ipynb) | Micrograd — scratch autograd, backprop, Neuron/Layer/MLP |
+| 2 | [secondWeek_SOC.ipynb](secondWeek_SOC.ipynb) | makemore — bigram, character embeddings, MLP (Bengio 2003), weight init, batch norm |
+| 3 | [thirdWeek_SOC.ipynb](thirdWeek_SOC.ipynb) | RNN, LSTM, self-attention, transformer (mini-GPT) — all from scratch |
+| Final | [TokensToTranslation.ipynb](TokensToTranslation.ipynb) | English → German seq2seq LSTM translator |
+
+---
+
 ## Project Description
 
 Given an English sentence, the model produces its German translation one token
