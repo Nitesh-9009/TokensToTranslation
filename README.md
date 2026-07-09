@@ -1,200 +1,27 @@
-# TokensToTranslation — by Nitesh Patel
+# TokensToTranslation — Deep Learning SoC by Nitesh Patel
 
-An English → German neural machine translator built with a plain PyTorch
-sequence-to-sequence LSTM. No HuggingFace pipelines, no pretrained translation
-models — the encoder, decoder and the seq2seq loop (with teacher forcing) are
-all written by hand.
+This repo has my Deep Learning Summer of Code work. It goes week by week and
+finally ends with the main project (English → German translator).
 
-This was my final project for the **Deep Learning Summer of Code**, after
-working through micrograd, character embeddings, MLPs, the makemore series,
-batch-norm / init, RNNs, LSTMs, attention and transformers. The idea was to
-take everything from those and actually build a translator end to end.
+The main branch has **4 things**:
 
----
-
-## SoC Weekly Progress
-
-The repo also holds my week-by-week assignment notebooks that build up to the
-final project:
-
-| Week | Notebook | Topics |
-|------|----------|--------|
-| 1 | [firstWeek_SOC.ipynb](firstWeek_SOC.ipynb) | Micrograd — scratch autograd, backprop, Neuron/Layer/MLP |
-| 2 | [secondWeek_SOC.ipynb](secondWeek_SOC.ipynb) | makemore — bigram, character embeddings, MLP (Bengio 2003), weight init, batch norm |
-| 3 | [thirdWeek_SOC.ipynb](thirdWeek_SOC.ipynb) | RNN, LSTM, self-attention, transformer (mini-GPT) — all from scratch |
-| Final | [TokensToTranslation.ipynb](TokensToTranslation.ipynb) | English → German seq2seq LSTM translator |
+| # | File / Folder | What is inside |
+|---|---------------|----------------|
+| 1 | [firstWeek_SOC.ipynb](firstWeek_SOC.ipynb) | Micrograd — apna chota autograd engine, backprop, tanh, Neuron / Layer / MLP |
+| 2 | [secondWeek_SOC.ipynb](secondWeek_SOC.ipynb) | makemore — bigram, neural bigram, MLP with character embeddings, weight init, batch norm |
+| 3 | [thirdWeek_SOC.ipynb](thirdWeek_SOC.ipynb) | RNN, LSTM (with gates), self attention, transformer (chhota GPT) — sab scratch se |
+| 4 | [project/](project/) | Final project — English → German seq2seq LSTM translator (whole code + notebook + README) |
 
 ---
 
-## Project Description
+## How to run
 
-Given an English sentence, the model produces its German translation one token
-at a time. Under the hood it's the classic Sutskever et al. seq2seq setup:
+- **Week notebooks** — open any `*_SOC.ipynb` in Google Colab (Colab badge on
+  top of each) and run the cells top to bottom.
+- **Project** — everything for the translator is inside [project/](project/).
+  See [project/README.md](project/README.md) for details, or open
+  [project/TokensToTranslation.ipynb](project/TokensToTranslation.ipynb) in Colab.
 
-* an **Encoder** LSTM reads the whole English sentence and compresses it into a
-  final hidden/cell state,
-* a **Decoder** LSTM starts from that state and generates German tokens
-  autoregressively until it emits `<eos>`.
-
-During training the decoder is sometimes fed the ground-truth previous token
-(*teacher forcing*) and sometimes its own prediction, which stabilises early
-learning. At inference time teacher forcing is off and decoding is greedy.
-
----
-
-## Architecture
-
-```
-English sentence
-      │
-      ▼
-  Embedding (128)
-      │
-      ▼
-  Encoder LSTM (hidden 256)  ──►  (hidden, cell)
-                                       │
-                                       ▼
-                            Decoder LSTM (hidden 256)
-                                       │
-                                 Linear → vocab
-                                       │
-                                       ▼
-                               German tokens
-```
-
-| Component | Layers |
-|-----------|--------|
-| Encoder   | `nn.Embedding` → `nn.LSTM` |
-| Decoder   | `nn.Embedding` → `nn.LSTM` → `nn.Linear` |
-| Seq2Seq   | Encoder + Decoder + teacher forcing loop |
-
-Default hyper-parameters:
-
-| Param | Value |
-|-------|-------|
-| Embedding dim | 128 |
-| Hidden dim | 256 |
-| LSTM layers | 1 |
-| Dropout | 0.2 |
-| Batch size | 64 |
-| Learning rate | 0.001 (Adam) |
-| Epochs | 10 |
-| Loss | `CrossEntropyLoss(ignore_index=<pad>)` |
-| Gradient clip | 1.0 |
-
----
-
-## Dataset
-
-[ManyThings.org Anki deu-eng](https://www.manythings.org/anki/deu-eng.zip)
-tab-separated English/German sentence pairs. The notebook downloads and
-extracts the zip automatically and uses the first ~5000 pairs so a full run
-finishes in a few minutes.
-
-Preprocessing:
-
-* lower-case + trim
-* spaces inserted around punctuation
-* plain whitespace tokenization (no spaCy / SentencePiece)
-* manual vocabularies with `<pad> <sos> <eos> <unk>` special tokens
-
----
-
-## Folder Structure
-
-```
-TokensToTranslation/
-├── data/                     # corpus is downloaded here (gitignored)
-├── config.py                 # all hyper-parameters in one place
-├── utils.py                  # download, cleaning, tokenizer, Vocabulary
-├── dataset.py                # TranslationDataset + padding collate_fn
-├── model.py                  # Encoder, Decoder, Seq2Seq
-├── train.py                  # training loop, saves translator.pt
-├── inference.py              # load model + translate_sentence()
-├── requirements.txt
-├── README.md
-└── TokensToTranslation.ipynb # full Colab notebook (everything inline)
-```
-
----
-
-## Installation
-
-```bash
-git clone https://github.com/Nitesh-9009/TokensToTranslation.git
-cd TokensToTranslation
-pip install -r requirements.txt
-```
-
-Or just open `TokensToTranslation.ipynb` in Google Colab and run the cells top
-to bottom — it installs nothing extra beyond what Colab already ships.
-
----
-
-## Training
-
-```bash
-python train.py
-```
-
-This downloads the data, builds the vocabularies, trains for 10 epochs and
-writes `translator.pt` (weights **and** both vocabularies, so inference needs
-nothing else).
-
----
-
-## Inference
-
-```bash
-# a few built-in demo sentences
-python inference.py
-
-# or your own
-python inference.py "I love India."
-```
-
-Programmatic use:
-
-```python
-from inference import load_model, translate_sentence
-
-model, src_vocab, trg_vocab, max_len = load_model("translator.pt")
-print(translate_sentence("I love India.", model, src_vocab, trg_vocab, max_len))
-```
-
----
-
-## Sample Results
-
-With only 5k pairs and 10 epochs the model is small, but it clearly learns the
-mapping for common short sentences:
-
-| English | German (predicted) |
-|---------|--------------------|
-| i love india . | ich liebe indien . |
-| she is reading a book . | sie liest ein buch . |
-| we are going home . | wir gehen nach hause . |
-| the weather is nice today . | das wetter ist heute schön . |
-| he drinks coffee every morning . | er trinkt jeden morgen kaffee . |
-
-(Exact output varies per run — training is stochastic and the corpus is small.)
-
----
-
-## Future Improvements
-
-* Add **attention** (Bahdanau/Luong) so the decoder isn't bottlenecked by a
-  single context vector — this is the obvious next step given the SoC syllabus.
-* Swap greedy decoding for **beam search**.
-* Train on the **full** corpus (200k+ pairs) with more epochs.
-* Subword tokenization (BPE) to shrink the vocab and handle rare words.
-* Track **BLEU** on a held-out validation split instead of eyeballing outputs.
-* Try a small **Transformer** encoder/decoder and compare.
-
----
-
-## Notes
-
-No pretrained translation weights are used anywhere. Only generic building
-blocks (`nn.Embedding`, `nn.LSTM`, `nn.Linear`, `CrossEntropyLoss`, `Adam`) —
-the translation logic itself is implemented in this repo.
+Each week builds towards the last one — micrograd gives the backprop idea,
+makemore gives embeddings + training tricks, RNN/LSTM/attention give the
+sequence models, and the project puts encoder + decoder together for translation.
