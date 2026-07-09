@@ -1,0 +1,14 @@
+# keep the data folder in git, ignore the downloaded corpus
+*.zip
+deu.txt
+_about.txt
+
+# trained weights
+*.pt
+
+# python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+env/

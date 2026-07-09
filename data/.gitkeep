@@ -1,0 +1,2 @@
+# The ManyThings deu-eng corpus is downloaded here at runtime
+# (data/deu.txt) and is gitignored. See the notebook / train.py.
