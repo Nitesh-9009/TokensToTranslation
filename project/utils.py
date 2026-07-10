@@ -42,11 +42,19 @@ def download_dataset(data_dir="data"):
         return txt_path
 
     print("Downloading dataset ...")
-    # manythings.org blocks the default urllib user-agent, so spoof a browser.
-    opener = urllib.request.build_opener()
-    opener.addheaders = [("User-Agent", "Mozilla/5.0")]
-    urllib.request.install_opener(opener)
-    urllib.request.urlretrieve(DATA_URL, zip_path)
+    # manythings.org is picky about headers -> send a full browser-like set,
+    # otherwise it replies 403/406. Referer + Accept are the important ones.
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/120.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.manythings.org/anki/",
+    }
+    req = urllib.request.Request(DATA_URL, headers=headers)
+    with urllib.request.urlopen(req) as resp, open(zip_path, "wb") as out:
+        out.write(resp.read())
 
     print("Extracting ...")
     with zipfile.ZipFile(zip_path, "r") as zf:

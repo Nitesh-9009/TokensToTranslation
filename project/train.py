@@ -54,23 +54,34 @@ def train_one_epoch(model, loader, optimizer, criterion, clip, tf_ratio):
 
 
 @torch.no_grad()
-def evaluate(model, loader, criterion):
-    """Validation-style pass with teacher forcing switched off."""
+def evaluate(model, loader, criterion, pad_idx):
+    """Validation pass (no teacher forcing). Returns (loss, token_accuracy).
+
+    Token accuracy = fraction of non-padding target tokens the model predicts
+    correctly. It's a simple, cheap proxy for how good the translations are.
+    """
     model.eval()
     epoch_loss = 0.0
+    correct = 0
+    total = 0
 
     for src, trg in loader:
         src, trg = src.to(config.DEVICE), trg.to(config.DEVICE)
 
         output = model(src, trg, teacher_forcing_ratio=0.0)
         output_dim = output.shape[-1]
-        output = output[:, 1:].reshape(-1, output_dim)
-        trg_flat = trg[:, 1:].reshape(-1)
+        flat_out = output[:, 1:].reshape(-1, output_dim)
+        flat_trg = trg[:, 1:].reshape(-1)
 
-        loss = criterion(output, trg_flat)
-        epoch_loss += loss.item()
+        epoch_loss += criterion(flat_out, flat_trg).item()
 
-    return epoch_loss / len(loader)
+        # accuracy over the real (non-pad) tokens only
+        preds = flat_out.argmax(1)
+        mask = flat_trg != pad_idx
+        correct += (preds[mask] == flat_trg[mask]).sum().item()
+        total += mask.sum().item()
+
+    return epoch_loss / len(loader), correct / max(total, 1)
 
 
 def build_everything():
@@ -79,21 +90,23 @@ def build_everything():
     pairs = load_pairs(txt_path, num_pairs=config.NUM_PAIRS)
     print(f"Loaded {len(pairs)} sentence pairs")
 
-    eng_sentences = [p[0] for p in pairs]
-    deu_sentences = [p[1] for p in pairs]
+    # hold out 10% as a dev set so we can measure accuracy on unseen sentences
+    split = int(0.9 * len(pairs))
+    train_pairs, dev_pairs = pairs[:split], pairs[split:]
+    print(f"Train: {len(train_pairs)} | Dev: {len(dev_pairs)}")
 
-    src_vocab = Vocabulary(min_freq=config.MIN_FREQ).build(eng_sentences)
-    trg_vocab = Vocabulary(min_freq=config.MIN_FREQ).build(deu_sentences)
+    # vocab is built only on the training pairs (dev must stay unseen)
+    src_vocab = Vocabulary(min_freq=config.MIN_FREQ).build([p[0] for p in train_pairs])
+    trg_vocab = Vocabulary(min_freq=config.MIN_FREQ).build([p[1] for p in train_pairs])
     print(f"English vocab: {len(src_vocab)} | German vocab: {len(trg_vocab)}")
 
-    dataset = TranslationDataset(pairs, src_vocab, trg_vocab, max_len=config.MAX_LEN)
     pad_idx = src_vocab.word2idx[PAD_TOKEN]
-    loader = DataLoader(
-        dataset,
-        batch_size=config.BATCH_SIZE,
-        shuffle=True,
-        collate_fn=make_collate_fn(pad_idx),
-    )
+    collate = make_collate_fn(pad_idx)
+
+    train_ds = TranslationDataset(train_pairs, src_vocab, trg_vocab, max_len=config.MAX_LEN)
+    dev_ds = TranslationDataset(dev_pairs, src_vocab, trg_vocab, max_len=config.MAX_LEN)
+    train_loader = DataLoader(train_ds, batch_size=config.BATCH_SIZE, shuffle=True, collate_fn=collate)
+    dev_loader = DataLoader(dev_ds, batch_size=config.BATCH_SIZE, shuffle=False, collate_fn=collate)
 
     encoder = Encoder(
         len(src_vocab), config.EMB_DIM, config.HIDDEN_DIM,
@@ -105,22 +118,25 @@ def build_everything():
     )
     model = Seq2Seq(encoder, decoder, config.DEVICE).to(config.DEVICE)
 
-    return model, loader, src_vocab, trg_vocab, pad_idx
+    return model, train_loader, dev_loader, src_vocab, trg_vocab, pad_idx
 
 
 def main():
-    model, loader, src_vocab, trg_vocab, pad_idx = build_everything()
+    model, train_loader, dev_loader, src_vocab, trg_vocab, pad_idx = build_everything()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
     criterion = nn.CrossEntropyLoss(ignore_index=pad_idx)
 
     print(f"Training on {config.DEVICE} for {config.EPOCHS} epochs\n")
     for epoch in range(1, config.EPOCHS + 1):
-        loss = train_one_epoch(
-            model, loader, optimizer, criterion,
+        train_loss = train_one_epoch(
+            model, train_loader, optimizer, criterion,
             config.CLIP, config.TEACHER_FORCING_RATIO,
         )
-        print(f"Epoch {epoch:02d}/{config.EPOCHS} | loss {loss:.4f}")
+        dev_loss, dev_acc = evaluate(model, dev_loader, criterion, pad_idx)
+        print(f"Epoch {epoch:02d}/{config.EPOCHS} | "
+              f"train loss {train_loss:.4f} | dev loss {dev_loss:.4f} | "
+              f"dev token-acc {dev_acc * 100:.2f}%")
 
     # bundle weights + vocabs so inference.py is fully self-contained
     torch.save(
