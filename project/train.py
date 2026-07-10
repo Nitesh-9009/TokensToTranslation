@@ -1,14 +1,4 @@
-"""
-train.py
---------
-End-to-end training script. Run it directly:
 
-    python train.py
-
-It downloads the data, builds the vocabs, trains the seq2seq model for a few
-epochs with teacher forcing + gradient clipping, and dumps everything needed
-for inference into translator.pt.
-"""
 
 import torch
 import torch.nn as nn

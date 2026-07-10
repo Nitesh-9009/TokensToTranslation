@@ -1,9 +1,4 @@
-"""
-config.py
----------
-One place for all the knobs. I pulled these out of train.py so the notebook and
-the scripts share the exact same numbers.
-"""
+
 
 import torch
 
@@ -21,7 +16,7 @@ DROPOUT = 0.2
 # training
 BATCH_SIZE = 64
 LEARNING_RATE = 0.001
-EPOCHS = 10
+EPOCHS = 64
 CLIP = 1.0
 TEACHER_FORCING_RATIO = 0.5
 

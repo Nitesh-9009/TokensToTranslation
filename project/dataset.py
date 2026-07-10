@@ -1,10 +1,4 @@
-"""
-dataset.py
-----------
-PyTorch ``Dataset`` + a ``collate_fn`` that pads a batch to the longest
-sequence in that batch. Every source/target sequence is wrapped with
-<sos> ... <eos> so the decoder knows where to start and stop.
-"""
+
 
 import torch
 from torch.utils.data import Dataset

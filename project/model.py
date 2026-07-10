@@ -1,15 +1,4 @@
-"""
-model.py
---------
-The actual seq2seq network, written from scratch on top of the stock PyTorch
-layers. Three pieces:
 
-    Encoder  -> reads the English sentence, hands back its final (hidden, cell)
-    Decoder  -> emits one German token per step, conditioned on that state
-    Seq2Seq  -> glues them together and does teacher forcing during training
-
-Everything runs with batch_first=True so tensors are [batch, time, ...].
-"""
 
 import random
 

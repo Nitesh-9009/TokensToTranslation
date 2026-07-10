@@ -1,14 +1,3 @@
-"""
-utils.py
---------
-Small helper module that takes care of everything *before* the model sees the
-data: downloading the corpus, cleaning the text, tokenising it and building the
-two vocabularies (one for English, one for German).
-
-I kept the tokenizer deliberately dumb (plain whitespace) because the whole
-point of the SoC project was to build the seq2seq stack ourselves rather than
-lean on spaCy / HF tokenizers.
-"""
 
 import os
 import re
