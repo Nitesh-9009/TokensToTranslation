@@ -8,8 +8,8 @@ The main branch has **4 things**:
 | # | File / Folder | What is inside |
 |---|---------------|----------------|
 | 1 | [firstWeek_SOC.ipynb](firstWeek_SOC.ipynb) | Micrograd — apna chota autograd engine, backprop, tanh, Neuron / Layer / MLP |
-| 2 | [secondWeek_SOC.ipynb](secondWeek_SOC.ipynb) | makemore — bigram, neural bigram, MLP with character embeddings, weight init, batch norm |
-| 3 | [thirdWeek_SOC.ipynb](thirdWeek_SOC.ipynb) | RNN, LSTM (with gates), self attention, transformer (chhota GPT) — sab scratch se |
+| 2 | [secondWeek_SOC.ipynb](secondWeek_SOC.ipynb) | makemore part 2 & 3 — MLP (Bengio 2003), character embeddings, weight init, batch norm + assignment exercises |
+| 3 | [thirdWeek_SOC.ipynb](thirdWeek_SOC.ipynb) | makemore part 4 & 5 — becoming a backprop ninja (manual gradients) + WaveNet |
 | 4 | [project/](project/) | Final project — English → German seq2seq LSTM translator (whole code + notebook + README) |
 
 ---
