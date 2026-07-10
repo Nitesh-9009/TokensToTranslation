@@ -151,20 +151,61 @@ print(translate_sentence("I love India.", model, src_vocab, trg_vocab, max_len))
 
 ---
 
-## Sample Results
+## Results & Accuracy
 
-With only 5k pairs and 10 epochs the model is small, but it clearly learns the
-mapping for common short sentences:
+I keep a 10% held-out dev set (500 sentence pairs the model never trains on) and
+measure **token-level accuracy** on it — the fraction of non-padding target words
+the model predicts correctly. I also watch the loss.
+
+Training run (10 epochs, 4500 train / 500 dev pairs, CPU):
+
+| Epoch | Train loss | Dev loss | Dev token-acc |
+|-------|-----------|----------|---------------|
+| 1  | 4.62 | 3.83 | 41.9% |
+| 4  | 3.03 | 3.21 | 52.2% |
+| 7  | 2.41 | 3.12 | 56.1% |
+| 10 | 2.03 | 3.06 | **58.2%** |
+
+So the accuracy goes up every epoch — the model is actually learning, not just
+memorising. Numbers vary a little each run since training is random.
+
+Some real outputs from the trained model (`python inference.py`):
 
 | English | German (predicted) |
 |---------|--------------------|
-| i love india . | ich liebe indien . |
-| she is reading a book . | sie liest ein buch . |
-| we are going home . | wir gehen nach hause . |
-| the weather is nice today . | das wetter ist heute schön . |
-| he drinks coffee every morning . | er trinkt jeden morgen kaffee . |
+| I am happy. | ich bin es . |
+| He is here. | er ist ein . |
+| Tom is my friend. | tom ist eine . . |
+| We are ready. | wir haben ihn . |
+| I love India. | ich liebe . . |
 
-(Exact output varies per run — training is stochastic and the corpus is small.)
+It gets the sentence structure and pronouns right (ich / er / wir / tom …) but
+the content words and longer sentences are still shaky. That makes sense — it's a
+small model, only 10 epochs, and there's no attention yet (the whole English
+sentence is squeezed into one vector). Adding attention is the main thing that
+would push the accuracy up.
+
+### How to check the accuracy yourself
+
+Just run the training — it prints the dev loss and dev token-accuracy after every
+epoch:
+
+```bash
+python train.py
+```
+
+```
+Epoch 10/10 | train loss 2.0321 | dev loss 3.0628 | dev token-acc 58.19%
+```
+
+The token-accuracy logic lives in the `evaluate()` function in
+[train.py](train.py): it runs the model on the dev set with teacher forcing off,
+takes `argmax` over the logits, and compares against the target, skipping `<pad>`.
+To eyeball quality instead of a number, translate your own sentences:
+
+```bash
+python inference.py "He is here." "I am tired."
+```
 
 ---
 
