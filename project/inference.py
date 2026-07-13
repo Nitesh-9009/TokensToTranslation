@@ -1,14 +1,3 @@
-"""
-inference.py
-------------
-Load a trained translator.pt and translate English sentences into German.
-
-    python inference.py            # runs a handful of demo sentences
-    python inference.py "I love India."
-
-Greedy decoding, no teacher forcing -- the decoder is fed its own previous
-prediction until it emits <eos> (or we hit max_len).
-"""
 
 import sys
 
